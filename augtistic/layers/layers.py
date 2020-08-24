@@ -6,6 +6,7 @@ from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.keras.engine.input_spec import InputSpec
 
+@tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomSaturation(Layer):
     """Adjust the contrast of an image or images by a random factor.
     Contrast is adjusted independently for each channel of each image during
@@ -71,7 +72,7 @@ class RandomSaturation(Layer):
         base_config = super(RandomSaturation, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
-
+@tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomHue(Layer):
     """Adjust the contrast of an image or images by a random factor.
     Contrast is adjusted independently for each channel of each image during
@@ -134,7 +135,7 @@ class RandomHue(Layer):
         base_config = super(RandomHue, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
-
+@tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomBrightness(Layer):
     """Adjust the contrast of an image or images by a random factor.
     Contrast is adjusted independently for each channel of each image during
@@ -199,7 +200,7 @@ class RandomBrightness(Layer):
         base_config = super(RandomBrightness, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
-
+@tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomGrayscale(Layer):
     """Convert image or images to grayscale image and restore original 3 channel
     shape.
@@ -243,7 +244,7 @@ class RandomGrayscale(Layer):
         x = tf.tile(x, [1, 1, 1, 3])
         return x
 
-
+@tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomBlendGrayscale(Layer):
     """Convert image or images to grayscale image and restore original 3 channel
     shape and then blend with original image at a random amount between 0 
@@ -312,7 +313,7 @@ class RandomBlendGrayscale(Layer):
         gray = tf.tile(gray, [1, 1, 1, 3])
         return gray * blend + x * (1-blend)
 
-
+@tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomCutout(Layer):
     """Apply cutout (https://arxiv.org/abs/1708.04552) to an image or images.
     This operation applies a (2*pad_size x 2*pad_size) mask of zeros to
