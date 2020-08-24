@@ -23,6 +23,8 @@ cd augtistic
 python setup.py install
 ```
 
+Alternatively, just simply copy and paste the `layers.py` file into your codebase.
+
 ## Usage
 
 To use the layers, import the package and simply add the new layers to your model just like any other Keras layer. One way is to include the augmentation layers directly into the full model:
