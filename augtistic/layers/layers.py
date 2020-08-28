@@ -214,18 +214,26 @@ class RandomSharpness(Layer):
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
     Attributes:
-        factor: a positive float represented as fraction of value, or a tuple of
+        probability: A positive float, chance of applying at all
+        factor: A positive float represented as fraction of value, or a tuple of
             size 2 representing lower and upper bound. When represented as a single
             float, lower = upper. The sharpness factor will be randomly picked between
             [lower, upper].
+        blend_factor: A positive float represented as fraction of value, or a tuple of
+            size 2 representing lower and upper bound of the amount to blend the result. 
+            When represented as a single float, blend_lower = blend_upper. 
+            The blend factor will be randomly picked between [blend_lower, blend_upper].            
         seed: Integer. Used to create a random seed.
         name: A string, the name of the layer.
     Raise:
         ValueError: if lower bound or upper bound is negative, or if upper bound is
                     smaller than lower bound
+        ValueError: if blend lower bound or upper bound is negative, 
+                    or if blend upper bound is smaller than lower bound
     """
 
-    def __init__(self, factor, seed=None, name=None, **kwargs):
+    def __init__(self, probability, factor, blend_factor=(0.1,0.7), seed=random.randint(0,1000), name=None, **kwargs):
+        self.probability = probability
         self.factor = factor
         if isinstance(factor, (tuple, list)):
             self.lower = factor[0]
@@ -238,8 +246,21 @@ class RandomSharpness(Layer):
         if self.upper < self.lower:
             raise ValueError('Factor first value must be smaller than second,'
                              ' got {}'.format(factor))
+        self.blend_factor = blend_factor
+        if isinstance(blend_factor, (tuple, list)):
+            self.blend_lower = blend_factor[0]
+            self.blend_upper = blend_factor[1]
+        else:
+            self.blend_lower = self.blend_upper = blend_factor
+        if self.blend_lower < 0. or self.blend_upper < 0.:
+            raise ValueError('Blend Factor cannot have negative values,'
+                             ' got {}'.format(blend_factor))
+        if self.blend_upper < self.blend_lower:
+            raise ValueError('Blend Factor first value must be smaller than second,'
+                             ' got {}'.format(blend_factor))
+        self.seed = seed
         self.input_spec = InputSpec(ndim=4)
-        self._rng = augr.generator.get(self.seed)
+        self._rng = make_generator(self.seed)
         super(RandomSharpness, self).__init__(name=name, **kwargs)
 
     def call(self, inputs, training=True):
@@ -247,16 +268,29 @@ class RandomSharpness(Layer):
             training = K.learning_phase()
 
         def random_sharpness_inputs():
-            factor = self._rng.uniform(
-                                shape=[],
-                                minval=self.lower,
-                                maxval=self.upper)
-            return tfa.image.sharpness(inputs, 
-                                       factor=factor)
+            return self._random_apply(self._apply_sharp, inputs, self.probability)
 
         output = tf_utils.smart_cond(training, random_sharpness_inputs, lambda: inputs)
         output.set_shape(inputs.shape)
         return output
+    
+    def _random_apply(self, func, x, p):
+        return tf.cond(
+          tf.less(self._rng.uniform([], minval=0, maxval=1, dtype=tf.float32),
+                  tf.cast(p, tf.float32)),
+          lambda: func(x),
+          lambda: x)
+        
+    def _apply_sharp(self, inputs):
+        factor = self._rng.uniform(shape=[], 
+                                   minval=self.lower, 
+                                   maxval=self.upper, dtype=tf.float32)
+        blend = self._rng.uniform(shape=[], 
+                                   minval=self.blend_lower, 
+                                   maxval=self.blend_upper, dtype=tf.float32)
+        sharp_inputs = tfa.image.sharpness(inputs, 
+                                   factor=factor)
+        return tfa.image.blend(sharp_inputs, inputs, blend)
 
     def compute_output_shape(self, input_shape):
         return input_shape
@@ -385,123 +419,6 @@ class RandomBlendGrayscale(Layer):
 
 @tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomCutout(Layer):
-    """Apply cutout (https://arxiv.org/abs/1708.04552) to an image or images.
-    This operation applies a (2*pad_size x 2*pad_size) mask of zeros to
-    a random location within the input. The pixel values filled in will be of the
-    value `replace`. The located where the mask will be applied is randomly
-    chosen uniformly over the whole image.
-    Input shape:
-        4D tensor with shape:
-        `(samples, height, width, channels)`, data_format='channels_last'.
-    Output shape:
-        4D tensor with shape:
-        `(samples, height, width, channels)`, data_format='channels_last'.
-    Attributes:
-        cutout_size: a positive float represented as fraction of value, or a tuple of
-            size 2 representing lower and upper bound. When represented as a single
-            float, lower = upper. The contrast factor will be randomly picked between
-            [1.0 - lower, 1.0 + upper].
-        seed: Integer. Used to create a random seed.
-        name: A string, the name of the layer.
-    Raise:
-        ValueError: if lower bound is not between [0, 1], or upper bound is
-            negative.
-    """
-
-    def __init__(self, cutout_size, replace=0, seed=None, name=None, **kwargs):
-        self.cutout_size = cutout_size        
-        if isinstance(cutout_size, (tuple, list)):
-            self.cutout_height = cutout_size[0]
-            self.cutout_width = cutout_size[1]
-        else:
-            self.cutout_height = self.cutout_width = cutout_size
-        if self.cutout_height < 0. or self.cutout_width < 0.:
-            raise ValueError('Cutout size cannot have negative values,'
-                             ' got {}'.format(factor))
-        self.replace = replace
-        if self.replace < 0.:
-            raise ValueError('Replace cannot have negative value,'
-                             ' got {}'.format(factor))
-        self.seed = seed
-        self.input_spec = InputSpec(ndim=4)
-        self._rng = augr.generator.get(self.seed)
-        super(RandomCutout, self).__init__(name=name, **kwargs)
-
-    def call(self, inputs, training=True):
-        if training is None:
-            training = K.learning_phase()
-
-        def random_cutout_inputs():
-            return self._cutout(inputs)
-
-        output = tf_utils.smart_cond(training, random_cutout_inputs,
-                                     lambda: inputs)
-        output.set_shape(inputs.shape)
-        return output
-
-    def compute_output_shape(self, input_shape):
-        return input_shape
-
-    def get_config(self):
-        config = {
-            'cutout_size': self.cutout_size,
-            'seed': self.seed,
-        }
-        base_config = super(RandomCutout, self).get_config()
-        return dict(list(base_config.items()) + list(config.items()))
-
-    def _cutout(self, images):
-        """Apply cutout to images
-        Arguments:
-            image: An image Tensor of type uint8.
-            pad_size: Specifies how big the zero mask that will be generated is that
-                is applied to the image. The mask will be of size
-                (2*pad_size x 2*pad_size).
-            replace: What pixel value to fill in the image in the area that has
-                the cutout mask applied to it.
-        Returns:
-            An image Tensor.
-        """
-        original_dtype = images.dtype
-        num_channels = tf.shape(images)[-1]
-        image_height = tf.shape(images)[1]
-        image_width = tf.shape(images)[2]
-        pad_height = self.cutout_height
-        pad_width = self.cutout_width
-
-        # Sample the center location in the image where the zero mask will be applied.
-        cutout_center_height = self._rng.uniform(
-            shape=[], minval=0, maxval=image_height,
-            dtype=tf.int32)
-
-        cutout_center_width = self._rng.uniform(
-            shape=[], minval=0, maxval=image_width,
-            dtype=tf.int32)
-
-        lower_pad = tf.maximum(0, cutout_center_height - pad_height)
-        upper_pad = tf.maximum(0, image_height - cutout_center_height - pad_height)
-        left_pad = tf.maximum(0, cutout_center_width - pad_width)
-        right_pad = tf.maximum(0, image_width - cutout_center_width - pad_width)
-
-        cutout_shape = [1, image_height - (lower_pad + upper_pad),
-                        image_width - (left_pad + right_pad)]
-        padding_dims = [[0,0], [lower_pad, upper_pad], [left_pad, right_pad]]
-
-        mask = tf.pad(tf.zeros(cutout_shape, dtype=images.dtype),
-                      padding_dims, 
-                      constant_values=1)
-        mask = tf.expand_dims(mask, -1)        
-        mask = tf.tile(mask, [1, 1, num_channels, 1])
-
-        images = tf.where(
-                    tf.equal(mask, 0),
-                    tf.ones_like(images, dtype=images.dtype) * self.replace,
-                    images)
-        return images
-
-
-@tf.keras.utils.register_keras_serializable(package="Augtistic")
-class RandomCutoutV2(Layer):
     """Apply cutout (https://arxiv.org/abs/1708.04552) to images.
     Uses TensorFlow Addons tfa.image.random_cutout under hood.
     https://www.tensorflow.org/addons/api_docs/python/tfa/image/random_cutout
@@ -568,6 +485,7 @@ class RandomCutoutV2(Layer):
         base_config = super(RandomCutout, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
+@tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomMeanFilter2D(Layer):
     """Perform median filtering on image(s).
     Uses ref:tfa.image.median_filter2d as filter algorithm.
@@ -635,6 +553,7 @@ class RandomMeanFilter2D(Layer):
         base_config = super(RandomMeanFilter2D, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
+@tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomGaussian2D(Layer):
     """Perform Gaussian blur on image(s).
     Input shape:
@@ -700,4 +619,103 @@ class RandomGaussian2D(Layer):
             'seed': self.seed,
         }
         base_config = super(RandomGaussian2D, self).get_config()
+        return dict(list(base_config.items()) + list(config.items()))
+
+@tf.keras.utils.register_keras_serializable(package="Augtistic")
+class RandomDenseImageWarp(Layer):
+    """This operation is for non-linear warp of any image specified by the flow field of the offset vector (here used random values for example).
+    Uses the TensorFlow Addons ref:tfa.image.dense_image_warp function.
+    https://www.tensorflow.org/addons/api_docs/python/tfa/image/dense_image_warp
+    Input shape:
+        4D tensor with shape:
+        `(samples, height, width, channels)`, data_format='channels_last'.
+    Output shape:
+        4D tensor with shape:
+        `(samples, height, width, channels)`, data_format='channels_last'.
+    Attributes:
+        factor: a positive float represented as fraction of value, or a tuple of
+            size 2 representing lower and upper bound. When represented as a single
+            float, lower = upper. The sharpness factor will be randomly picked between
+            [lower, upper].
+        seed: Integer. Used to create a random seed.
+        name: A string, the name of the layer.
+    Raise:
+        ValueError: if lower bound or upper bound is negative, or if upper bound is
+                    smaller than lower bound
+    """
+
+    def __init__(self, probability, factor, blend_factor=(0.1,0.7), seed=random.randint(0,1000), name=None, **kwargs):
+        self.probability = probability
+        self.factor = factor
+        if isinstance(factor, (tuple, list)):
+            self.lower = factor[0]
+            self.upper = factor[1]
+        else:
+            self.lower = self.upper = factor
+        if self.lower < 0. or self.upper < 0.:
+            raise ValueError('Factor cannot have negative values,'
+                             ' got {}'.format(factor))
+        if self.upper < self.lower:
+            raise ValueError('Factor first value must be smaller than second,'
+                             ' got {}'.format(factor))
+        self.blend_factor = blend_factor
+        if isinstance(blend_factor, (tuple, list)):
+            self.blend_lower = blend_factor[0]
+            self.blend_upper = blend_factor[1]
+        else:
+            self.blend_lower = self.blend_upper = blend_factor
+        if self.blend_lower < 0. or self.blend_upper < 0.:
+            raise ValueError('Blend Factor cannot have negative values,'
+                             ' got {}'.format(blend_factor))
+        if self.blend_upper < self.blend_lower:
+            raise ValueError('Blend Factor first value must be smaller than second,'
+                             ' got {}'.format(blend_factor))
+        self.seed = seed
+        self.input_spec = InputSpec(ndim=4)
+        self._rng = make_generator(self.seed)
+        super(RandomDenseImageWarp, self).__init__(name=name, **kwargs)
+    
+    def build(self, input_shape):
+        self.height = input_shape[1]
+        self.width = input_shape[2]
+
+    def call(self, inputs, training=True):
+        if training is None:
+            training = K.learning_phase()
+
+        def random_warp_inputs():
+            return self._random_apply(self._apply_warp, inputs, self.probability)
+
+        output = tf_utils.smart_cond(training, random_warp_inputs, lambda: inputs)
+        output.set_shape(inputs.shape)
+        return output
+    
+    def _random_apply(self, func, x, p):
+        return tf.cond(
+          tf.less(self._rng.uniform([], minval=0, maxval=1, dtype=tf.float32),
+                  tf.cast(p, tf.float32)),
+          lambda: func(x),
+          lambda: x)
+        
+    def _apply_warp(self, inputs):
+        blend = self._rng.uniform(shape=[], 
+                                   minval=self.blend_lower, 
+                                   maxval=self.blend_upper, dtype=tf.float32)        
+        flow_shape = [1, self.height, self.width, 2]
+        init_flows = self._rng.uniform(shape=flow_shape, 
+                                   minval=self.lower, 
+                                   maxval=self.upper, dtype=tf.float32)
+        init_flows = init_flows * 2.0
+        dense_img_warp = tfa.image.dense_image_warp(inputs, init_flows)
+        return tfa.image.blend(inputs, dense_img_warp, blend)
+
+    def compute_output_shape(self, input_shape):
+        return input_shape
+
+    def get_config(self):
+        config = {
+            'factor': self.factor,
+            'seed': self.seed
+        }
+        base_config = super(RandomDenseImageWarp, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
