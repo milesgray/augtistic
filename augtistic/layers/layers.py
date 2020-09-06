@@ -303,7 +303,6 @@ class RandomSharpness(Layer):
         base_config = super(RandomSharpness, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
 
-
 @tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomGrayscale(Layer):
     """Convert image or images to grayscale image and restore original 3 channel
@@ -321,8 +320,11 @@ class RandomGrayscale(Layer):
             negative.
     """
 
-    def __init__(self, name=None, **kwargs):
+    def __init__(self, probability, seed=random.randint(0,1000), name=None, **kwargs):
+        self.probability = probability
+        self.seed = seed        
         self.input_spec = InputSpec(ndim=4)
+        self._rng = make_generator(self.seed)
         super(RandomGrayscale, self).__init__(name=name, **kwargs)
 
     def call(self, inputs, training=True):
@@ -330,13 +332,19 @@ class RandomGrayscale(Layer):
             training = K.learning_phase()
 
         def random_grayscale_inputs():
-            return self._color_drop(inputs)
+            return self._random_apply(self._color_drop, inputs, self.probability)
 
-        output = tf_utils.smart_cond(training, random_grayscale_inputs,
-                                     lambda: inputs)
+        output = tf_utils.smart_cond(training, random_grayscale_inputs, lambda: inputs)
         output.set_shape(inputs.shape)
         return output
-
+    
+    def _random_apply(self, func, x, p):
+        return tf.cond(
+          tf.less(self._rng.uniform([], minval=0, maxval=1, dtype=tf.float32),
+                  tf.cast(p, tf.float32)),
+          lambda: func(x),
+          lambda: x)   
+        
     def compute_output_shape(self, input_shape):
         return input_shape
 
@@ -352,7 +360,7 @@ class RandomGrayscale(Layer):
 class RandomBlendGrayscale(Layer):
     """Convert image or images to grayscale image and restore original 3 channel
     shape and then blend with original image at a random amount between 0 
-    and `factor`. Uses ref:tfa.image.blend to combine images.
+    and `factor`.
     Input shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
@@ -371,8 +379,9 @@ class RandomBlendGrayscale(Layer):
             negative.
     """
 
-    def __init__(self, name=None, **kwargs):
-        self.factor = factor
+    def __init__(self, probability, factor=None, seed=random.randint(0,1000), name=None, **kwargs):
+        self.probability = probability
+        self.factor = factor if factor else probability
         if isinstance(factor, (tuple, list)):
             self.lower = factor[0]
             self.upper = factor[1]
@@ -384,7 +393,7 @@ class RandomBlendGrayscale(Layer):
                              ' got {}'.format(factor))
         self.seed = seed        
         self.input_spec = InputSpec(ndim=4)
-        self._rng = augr.generator.get(self.seed)
+        self._rng = make_generator(self.seed)
         super(RandomBlendGrayscale, self).__init__(name=name, **kwargs)
 
     def call(self, inputs, training=True):
@@ -392,12 +401,19 @@ class RandomBlendGrayscale(Layer):
             training = K.learning_phase()
 
         def random_grayscale_inputs():
-            return self._color_drop(inputs)
+            return self._random_apply(self._color_blend_drop, inputs, self.probability)
 
         output = tf_utils.smart_cond(training, random_grayscale_inputs,
                                      lambda: inputs)
         output.set_shape(inputs.shape)
         return output
+
+    def _random_apply(self, func, x, p):
+        return tf.cond(
+          tf.less(self._rng.uniform([], minval=0, maxval=1, dtype=tf.float32),
+                  tf.cast(p, tf.float32)),
+          lambda: func(x),
+          lambda: x)   
 
     def compute_output_shape(self, input_shape):
         return input_shape
