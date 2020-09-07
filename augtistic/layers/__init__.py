@@ -6,3 +6,4 @@ from hue import *
 from saturation import *
 from sharpness import *
 from warp import *
+from color import *
