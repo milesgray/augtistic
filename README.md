@@ -31,7 +31,7 @@ cd augtistic
 python setup.py install
 ```
 
-Alternatively, just simply copy and paste the `layers.py` file into your codebase.
+Alternatively, just simply copy and paste the `layers` folder into your codebase and rename it `augtistic`
 
 ## Usage
 
@@ -80,6 +80,8 @@ aug_output = tfaug.RandomSaturation(0.2)(aug_output)
 aug_output = tfaug.RandomBrightness(0.2)(aug_output)
 aug_output = tfaug.RandomHue(0.2)(aug_output)
 aug_output = tfaug.RandomCutout(20)(aug_output)
+aug_output = tfaug.RandomCutout(4)(aug_output)
+aug_output = tfaug.RandomCutout(28, )(aug_output)
 aug_output = tfpp.RandomZoom((-0.25,0.2), width_factor=(-0.25,0.2))(aug_output)
 aug_output = tfpp.RandomTranslation((-0.1, 0.1), (-0.15, 0.15))(aug_output)
 aug_model = keras.Model(aug_input, aug_output)
@@ -95,7 +97,9 @@ image_batch = aug_model.predict(image_batch)
 feature_batch = base_model(image_batch)
 ```
 
-For a more in-depth look at the Keras Data Augmentation offerings for images, refer to the official [tutorial](https://www.tensorflow.org/tutorials/images/data_augmentation)
+For a more in-depth look at the Keras Data Augmentation offerings for images, refer to the official [tutorial](https://www.tensorflow.org/tutorials/images/data_augmentation). 
+
+*These layers can also be used in dataset pipelines!*
 
 ## License
 
