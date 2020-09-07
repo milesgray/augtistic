@@ -29,7 +29,7 @@ class RandomGrayscale(Layer):
         self.probability = probability
         self.seed = seed        
         self.input_spec = InputSpec(ndim=4)
-        self._rng = make_generator(self.seed)
+        self._rng = augr.get(self.seed)
         super(RandomGrayscale, self).__init__(name=name, **kwargs)
 
     def call(self, inputs, training=True):
@@ -98,7 +98,7 @@ class RandomBlendGrayscale(Layer):
                              ' got {}'.format(factor))
         self.seed = seed        
         self.input_spec = InputSpec(ndim=4)
-        self._rng = make_generator(self.seed)
+        self._rng = augr.get(self.seed)
         super(RandomBlendGrayscale, self).__init__(name=name, **kwargs)
 
     def call(self, inputs, training=True):

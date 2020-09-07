@@ -42,7 +42,7 @@ class RandomMeanFilter2D(Layer):
                              ' got {}'.format(padding))
         self.seed = seed
         self.input_spec = InputSpec(ndim=4)
-        self._rng = make_generator(self.seed)
+        self._rng = augr.get(self.seed)
         super(RandomMeanFilter2D, self).__init__(name=name, **kwargs)
     
     def build(self, input_shape):
@@ -110,7 +110,7 @@ class RandomMedianFilter2D(Layer):
                              ' got {}'.format(padding))
         self.seed = seed
         self.input_spec = InputSpec(ndim=4)
-        self._rng = make_generator(self.seed)
+        self._rng = augr.get(self.seed)
         super(RandomMedianFilter2D, self).__init__(name=name, **kwargs)
     
     def build(self, input_shape):
@@ -179,7 +179,7 @@ class RandomGaussian2D(Layer):
                              ' got {}'.format(padding))
         self.seed = seed
         self.input_spec = InputSpec(ndim=4)
-        self._rng = make_generator(self.seed)
+        self._rng = augr.get(self.seed)
         super(RandomGaussian2D, self).__init__(name=name, **kwargs)
     
     def build(self, input_shape):

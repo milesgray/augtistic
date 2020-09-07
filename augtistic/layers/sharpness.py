@@ -66,7 +66,7 @@ class RandomSharpness(Layer):
                              ' got {}'.format(blend_factor))
         self.seed = seed
         self.input_spec = InputSpec(ndim=4)
-        self._rng = make_generator(self.seed)
+        self._rng = augr.get(self.seed)
         super(RandomSharpness, self).__init__(name=name, **kwargs)
 
     def call(self, inputs, training=True):

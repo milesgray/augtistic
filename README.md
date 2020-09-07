@@ -6,12 +6,20 @@ These layers were made with the recent Vision-based Contrastive Learning trend i
 
 ## Available Augmentations
 
-* Random Contrast
-* Random Hue
-* Random Brightness
-* Random Grayscale
-* Random Blending Grayscale
-* Random Cutout
+* [Random Saturation](augtistic/layers/saturation.py)
+* [Random Hue](augtistic/layers/hue.py)
+* [Random Brightness](augtistic/layers/brightness.py)
+* **Grayscale**
+  * [Random Grayscale](augtistic/layers/grayscale.py)
+  * [Random Blending Grayscale](augtistic/layers/grayscale.py)
+* [Random Cutout](augtistic/layers/cutout.py)
+* [Random Warp](augtistic/layers/warp.py)
+* [Random Sharpness](augtistic/layers/sharpness.py)
+* **Blur**
+  * [Random Gaussian 2D Blur](augtistic/layers/blur.py)
+  * [Random Mean Filter 2D](augtistic/layers/blur.py)
+  * [Random Median Filter 2D](augtistic/layers/blur.py)
+* [Random Color](augtistic/layers/color.py)
 
 ## Installation
 

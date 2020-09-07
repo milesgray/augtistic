@@ -8,7 +8,6 @@ from tensorflow.python.keras.engine.input_spec import InputSpec
 
 import augtistic.random as augr
 
-
 class RandomHSVinYIQ(Layer):
     """Adjust hue, saturation, value of an RGB image randomly in YIQ color space.
     Equivalent to adjust_yiq_hsv() but uses:

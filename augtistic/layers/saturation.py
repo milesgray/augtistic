@@ -10,12 +10,12 @@ import augtistic.random as augr
 
 @tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomSaturation(Layer):
-    """Adjust the contrast of an image or images by a random factor.
-    Contrast is adjusted independently for each channel of each image during
+    """Adjust the saturation of an image or images by a random factor.
+    Saturation is adjusted independently for each channel of each image during
     training.
     For each channel, this layer computes the mean of the image pixels in the
     channel and then adjusts each component `x` of each pixel to
-    `(x - mean) * contrast_factor + mean`.
+    `(x - mean) * saturation_factor + mean`.
     Input shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
@@ -25,7 +25,7 @@ class RandomSaturation(Layer):
     Attributes:
         factor: a positive float represented as fraction of value, or a tuple of
             size 2 representing lower and upper bound. When represented as a single
-            float, lower = upper. The contrast factor will be randomly picked between
+            float, lower = upper. The saturation factor will be randomly picked between
             [1.0 - lower, 1.0 + upper].
         seed: Integer. Used to create a random seed.
         name: A string, the name of the layer.
