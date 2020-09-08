@@ -2,7 +2,9 @@
 
 **AugTistic** is a repository that expands on the TensorFlow's [Keras Preprocessing layers](https://www.tensorflow.org/api_docs/python/tf/keras/layers/experimental/preprocessing) introduced in TensorFlow 2.3.0 under the `tf.keras.layers.experimental.preprocessing` namespace. This repository structure is based on TensorFlow Addons and the layers themselves are based on the 2.3.0 implementations of the `RandomContrast` Preprocessing layer, which is likely to change in future versions.  As it is now, however, these layers will most likely continue to work as they are merely subclassed from the standard Keras `Layer` base class.
 
-These layers were made with the recent Vision-based Contrastive Learning trend in mind, in particular the instance discrimination strategy that is proving to be a core component to successful Contrastive pipelines. Of course, these layers can be used in any situation where the data augmentation should be built into a Model instead of external code - or if you just get fixated on the layer abstraction and need as much functionality as possible within it to avoid throwing a tantrum.
+These layers were made with the recent Vision-based **Contrastive Learning** trend in mind, in particular the instance discrimination strategy that is proving to be a core component to successful contrastive pipelines. Of course, these layers can be used in any situation where the data augmentation should be built into a Model instead of external code - or if you just get fixated on the layer abstraction and need as much functionality as possible within it to avoid throwing a tantrum.
+
+Note: *This is currently in **BETA** status as all bugs are ironed out through usage*
 
 ## Available Augmentations
 
@@ -19,11 +21,11 @@ These layers were made with the recent Vision-based Contrastive Learning trend i
   * [Random Gaussian 2D Blur](augtistic/layers/blur.py)
   * [Random Mean Filter 2D](augtistic/layers/blur.py)
   * [Random Median Filter 2D](augtistic/layers/blur.py)
-* [Random Color](augtistic/layers/color.py)
+* [Random HSV in YIQ](augtistic/layers/color.py)
 
 ## Installation
 
-AugTistic will soon be made available on PyPI, but in the meantime, to install the package you must clone this repo and manually install it using the following commands:
+AugTistic will soon be made available on PyPI, once I am confident that all of the bugs are out. In the meantime, to install the package you must clone this repo and manually install it using the following commands:
 
 ```shell
 git clone https://github.com/milesgray/augtistic.git
@@ -97,7 +99,7 @@ image_batch = aug_model.predict(image_batch)
 feature_batch = base_model(image_batch)
 ```
 
-For a more in-depth look at the Keras Data Augmentation offerings for images, refer to the official [tutorial](https://www.tensorflow.org/tutorials/images/data_augmentation). 
+For a more in-depth look at the Keras Data Augmentation offerings for images, refer to the official [tutorial](https://www.tensorflow.org/tutorials/images/data_augmentation).
 
 *These layers can also be used in dataset pipelines!*
 

@@ -31,7 +31,13 @@ class RandomCutout(Layer):
             negative.
     """
 
-    def __init__(self, cutout_size, replace=0, seed=None, name=None, **kwargs):
+    def __init__(self, cutout_size, rounds=1, replace=0, seed=None, name=None, **kwargs):
+        self.rounds = rounds
+        if not isinstance(rounds, int):
+            self.rounds = int(rounds)
+        if self.rounds < 0.:
+            raise ValueError('Rounds cannot have negative value,'
+                             ' got {}'.format(factor))
         self.cutout_size = cutout_size        
         if isinstance(cutout_size, (tuple, list)):
             self.cutout_height = cutout_size[0]
@@ -53,18 +59,27 @@ class RandomCutout(Layer):
     def call(self, inputs, training=True):
         if training is None:
             training = K.learning_phase()
-
+        
         def random_cutout_inputs():
-            return tfa.image.random_cutout(inputs, 
-                                           mask_size=self.cutout_size, 
-                                           constant_values=self.replace, 
-                                           seed=self.seed)
+            for i in range(self.rounds):
+                return RandomCutout.do_cutout(inputs,
+                                              tf.constant(self.cutout_size, dtype=tf.dtypes.int32),
+                                              tf.constant(self.replace, dtype=tf.dtypes.float32),
+                                              tf.constant(self.seed, dtype=tf.dtypes.int32) if self.seed else None)
 
         output = tf_utils.smart_cond(training, random_cutout_inputs,
                                      lambda: inputs)
         output.set_shape(inputs.shape)
         return output
 
+    @staticmethod
+    @tf.function    
+    def do_cutout(i, cutout_size, replace, seed):
+        return tfa.image.random_cutout(i, 
+                                       mask_size=cutout_size, 
+                                       constant_values=replace, 
+                                       seed=seed)
+        
     def compute_output_shape(self, input_shape):
         return input_shape
 
