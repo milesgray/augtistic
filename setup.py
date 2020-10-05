@@ -37,7 +37,7 @@ from datetime import datetime
 from setuptools import find_packages
 from setuptools import setup
 
-version_path = os.path.join(os.path.dirname(__file__), 'uncertainty_baselines')
+version_path = os.path.join(os.path.dirname(__file__), 'augtistic')
 sys.path.append(version_path)
 from version import __version__  # pylint: disable=g-import-not-at-top
 
