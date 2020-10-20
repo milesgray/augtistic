@@ -4,7 +4,7 @@
 
 These layers were made with the recent Vision-based **Contrastive Learning** trend in mind, in particular the instance discrimination strategy that is proving to be a core component to successful contrastive pipelines. Of course, these layers can be used in any situation where the data augmentation should be built into a Model instead of external code - or if you just get fixated on the layer abstraction and need as much functionality as possible within it to avoid throwing a tantrum.
 
-Note: *This is currently in **BETA** status as all bugs are ironed out through usage*
+Note: *There is now an example notebook that shows all of the currently implemented layers working together*
 
 ## Available Augmentations
 
@@ -45,14 +45,15 @@ import tensorflow.keras as keras
 import tensorflow.keras.layers as layers
 import tensorflow.keras.layers.experimental.preprocessing as tfpp
 import augtistic as tfaug
+import augtistic.layers
 
 IMAGE_SHAPE = (224,224,3)
 NUM_CLASSES = 5
 
 model = Sequential([
   tfpp.Rescaling(1./255, input_shape=IMAGE_SHAPE),
-  tfaug.RandomGrayscale(),
-  tfaug.RandomCutout(20),
+  tfaug.layers.RandomGrayscale(),
+  tfaug.layers.RandomCutout(20),
   layers.Conv2D(16, 3, padding='same', activation='relu'),
   layers.MaxPooling2D(),
   layers.Conv2D(32, 3, padding='same', activation='relu'),
@@ -73,17 +74,18 @@ import tensorflow.keras as keras
 import tensorflow.keras.layers as layers
 import tensorflow.keras.layers.experimental.preprocessing as tfpp
 import augtistic as tfaug
+import augtistic.layers
 
 IMAGE_SHAPE = (224,224,3)
 
 aug_input = layers.Input(IMAGE_SHAPE)
 aug_output = tfpp.RandomContrast(0.2)(aug_input)
-aug_output = tfaug.RandomSaturation(0.2)(aug_output)
-aug_output = tfaug.RandomBrightness(0.2)(aug_output)
-aug_output = tfaug.RandomHue(0.2)(aug_output)
-aug_output = tfaug.RandomCutout(20)(aug_output)
-aug_output = tfaug.RandomCutout(4)(aug_output)
-aug_output = tfaug.RandomCutout(28, )(aug_output)
+aug_output = tfaug.layers.RandomSaturation(0.2)(aug_output)
+aug_output = tfaug.layers.RandomBrightness(0.2)(aug_output)
+aug_output = tfaug.layers.RandomHue(0.2)(aug_output)
+aug_output = tfaug.layers.RandomCutout(20)(aug_output)
+aug_output = tfaug.layers.RandomCutout(4)(aug_output)
+aug_output = tfaug.layers.RandomCutout(28, )(aug_output)
 aug_output = tfpp.RandomZoom((-0.25,0.2), width_factor=(-0.25,0.2))(aug_output)
 aug_output = tfpp.RandomTranslation((-0.1, 0.1), (-0.15, 0.15))(aug_output)
 aug_model = keras.Model(aug_input, aug_output)
