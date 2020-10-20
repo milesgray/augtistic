@@ -1,1 +1,1 @@
-from ensure_tf_install import _check_tf_version
+from .ensure_tf_install import _check_tf_version
