@@ -1,13 +1,17 @@
+import random
+
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.backend as K
+import tensorflow_addons as tfa
 
 from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.keras.engine.input_spec import InputSpec
 
-import augtistic.random as augr
+import augtistic.rand as augr
 
+@tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomHSVinYIQ(Layer):
     """Adjust hue, saturation, value of an RGB image randomly in YIQ color space.
     Equivalent to adjust_yiq_hsv() but uses:
@@ -44,7 +48,7 @@ class RandomHSVinYIQ(Layer):
 
         if self.lower_saturation < 0. or self.upper_saturation < 0. or self.lower_value < 0.:
             raise ValueError('Cannot have negative values or greater than 1.0,'
-                                             ' got {}'.format(factor))
+                            ' got {}'.format(factor))
         self.seed = seed
         self.input_spec = InputSpec(ndim=4)
         super(RandomHSVinYIQ, self).__init__(name=name, **kwargs)
@@ -53,9 +57,9 @@ class RandomHSVinYIQ(Layer):
         if training is None:
             training = K.learning_phase()
 
-        def random_hsv_in_yiq_inputs(x):
-            return tfa.image.random_hsv_in_yiq(x,
-                                               self.fmax_delta_hue,
+        def random_hsv_in_yiq_inputs():
+            return tfa.image.random_hsv_in_yiq(inputs,
+                                               self.max_delta_hue,
                                                self.lower_saturation,
                                                self.upper_saturation,
                                                self.lower_value,

@@ -1,24 +1,30 @@
+import random
+
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.backend as K
+import tensorflow_addons as tfa
 
 from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.keras.engine.input_spec import InputSpec
 
-import augtistic.random as augr
+import augtistic.rand as augr
 
 @tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomCutout(Layer):
     """Apply cutout (https://arxiv.org/abs/1708.04552) to images.
     Uses TensorFlow Addons tfa.image.random_cutout under hood.
     https://www.tensorflow.org/addons/api_docs/python/tfa/image/random_cutout
+    
     Input shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Output shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Attributes:
         cutout_size: a positive float represented as fraction of value, or a tuple of
             size 2 representing lower and upper bound. When represented as a single
@@ -26,12 +32,13 @@ class RandomCutout(Layer):
             [1.0 - lower, 1.0 + upper].
         seed: Integer. Used to create a random seed.
         name: A string, the name of the layer.
+    
     Raise:
         ValueError: if lower bound is not between [0, 1], or upper bound is
             negative.
     """
 
-    def __init__(self, cutout_size, rounds=1, replace=0, seed=None, name=None, **kwargs):
+    def __init__(self, cutout_size, rounds=1, replace=0, seed=random.randint(0,1000), name=None, **kwargs):
         self.rounds = rounds
         if not isinstance(rounds, int):
             self.rounds = int(rounds)
@@ -62,10 +69,10 @@ class RandomCutout(Layer):
         
         def random_cutout_inputs():
             for i in range(self.rounds):
-                return RandomCutout.do_cutout(inputs,
-                                              tf.constant(self.cutout_size, dtype=tf.dtypes.int32),
-                                              tf.constant(self.replace, dtype=tf.dtypes.float32),
-                                              tf.constant(self.seed, dtype=tf.dtypes.int32) if self.seed else None)
+                return self.do_cutout(inputs,
+                                      tf.constant(self.cutout_size, dtype=tf.dtypes.int32),
+                                      tf.constant(self.replace, dtype=tf.dtypes.float32),
+                                      tf.constant(self.seed, dtype=tf.dtypes.int32) if self.seed else None)
 
         output = tf_utils.smart_cond(training, random_cutout_inputs,
                                      lambda: inputs)
@@ -77,8 +84,7 @@ class RandomCutout(Layer):
     def do_cutout(i, cutout_size, replace, seed):
         return tfa.image.random_cutout(i, 
                                        mask_size=cutout_size, 
-                                       constant_values=replace, 
-                                       seed=seed)
+                                       constant_values=replace)
         
     def compute_output_shape(self, input_shape):
         return input_shape

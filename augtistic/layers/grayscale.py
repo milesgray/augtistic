@@ -1,12 +1,15 @@
+import random
+
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.backend as K
+import tensorflow_addons as tfa
 
 from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.keras.engine.input_spec import InputSpec
 
-import augtistic.random as augr
+import augtistic.rand as augr
 
 @tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomGrayscale(Layer):
@@ -39,7 +42,8 @@ class RandomGrayscale(Layer):
         def random_grayscale_inputs():
             return self._random_apply(self._color_drop, inputs, self.probability)
 
-        output = tf_utils.smart_cond(training, random_grayscale_inputs, lambda: inputs)
+        output = tf_utils.smart_cond(training, random_grayscale_inputs, 
+                                     lambda: inputs)
         output.set_shape(inputs.shape)
         return output
     

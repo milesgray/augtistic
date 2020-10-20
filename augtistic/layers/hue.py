@@ -1,12 +1,15 @@
+import random
+
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.backend as K
+import tensorflow_addons as tfa
 
 from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.keras.engine.input_spec import InputSpec
 
-import augtistic.random as augr
+import augtistic.rand as augr
 
 @tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomHue(Layer):
@@ -34,7 +37,7 @@ class RandomHue(Layer):
             negative.
     """
 
-    def __init__(self, factor, seed=None, name=None, **kwargs):
+    def __init__(self, factor, seed=random.randint(0,1000), name=None, **kwargs):
         self.factor = factor
         if isinstance(factor, (tuple, list)):
             self.lower = factor[0]

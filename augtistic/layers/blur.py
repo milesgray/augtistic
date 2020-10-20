@@ -1,12 +1,15 @@
+import random
+
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.backend as K
+import tensorflow_addons as tfa
 
 from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.keras.engine.input_spec import InputSpec
 
-import augtistic.random as augr
+import augtistic.rand as augr
 
 @tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomMeanFilter2D(Layer):
@@ -81,18 +84,22 @@ class RandomMedianFilter2D(Layer):
     """Perform median filtering on image(s).
     Uses ref:tfa.image.median_filter2d as filter algorithm.
     https://www.tensorflow.org/addons/api_docs/python/tfa/image/median_filter2d
+    
     Input shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Output shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Attributes:
         filter_factor: A positive int, the amount to divide image height by to determine `filter_size` for gaussian filter
         padding: A string, one of "REFLECT", "CONSTANT", or "SYMMETRIC". The type of padding algorithm to use, which is compatible with mode argument in tf.pad. For more details, please refer to https://www.tensorflow.org/api_docs/python/tf/pad
         constant_values: A scalar, the pad value to use in "CONSTANT" padding mode.
         seed: Integer. Used to create a random seed.
         name: A string, the name of the layer.
+    
     Raise:
         ValueError: if lower bound is not between [0, 1], or upper bound is
             negative.
@@ -147,24 +154,28 @@ class RandomMedianFilter2D(Layer):
 @tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomGaussian2D(Layer):
     """Perform Gaussian blur on image(s).
+    
     Input shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Output shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Attributes:
         filter_factor: A positive int, the amount to divide image height by to determine `filter_size` for gaussian filter
         padding: A string, one of "REFLECT", "CONSTANT", or "SYMMETRIC". The type of padding algorithm to use, which is compatible with mode argument in tf.pad. For more details, please refer to https://www.tensorflow.org/api_docs/python/tf/pad
         replace: A scalar, the pad value to use in "CONSTANT" padding mode.
         seed: Integer. Used to create a random seed.
         name: A string, the name of the layer.
+    
     Raise:
         ValueError: if lower bound is not between [0, 1], or upper bound is
             negative.
     """
 
-    def __init__(self, probability, padding='REFLECT', replace=0, seed=None, name=None, **kwargs):
+    def __init__(self, probability, padding='REFLECT', replace=0, seed=random.randint(0,1000), name=None, **kwargs):
         self.probability = probability        
         if self.probability < 0:
             raise ValueError('probability cannot have negative values,'
@@ -199,6 +210,7 @@ class RandomGaussian2D(Layer):
 
     def _gaussian_blur(self, image, kernel_size, sigma, padding='SAME'):
         """Blurs the given image with separable convolution.
+        
         Args:
             image: Tensor of shape [height, width, channels] and dtype float to blur.
             kernel_size: Integer Tensor for the size of the blur kernel. This is should
@@ -206,6 +218,7 @@ class RandomGaussian2D(Layer):
             size + 1.
             sigma: Sigma value for gaussian operator.
             padding: Padding to use for the convolution. Typically 'SAME' or 'VALID'.
+        
         Returns:
             A Tensor representing the blurred image.
         """
@@ -241,11 +254,13 @@ class RandomGaussian2D(Layer):
 
     def _random_blur(self, image, height, width, p=1.0):
         """Randomly blur an image.
+        
         Args:
             image: `Tensor` representing an image of arbitrary size.
             height: Height of output image.
             width: Width of output image.
             p: probability of applying this transformation.
+        
         Returns:
             A preprocessed image `Tensor`.
         """

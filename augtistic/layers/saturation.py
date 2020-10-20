@@ -1,12 +1,15 @@
+import random
+
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.backend as K
+import tensorflow_addons as tfa
 
 from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.keras.engine.input_spec import InputSpec
 
-import augtistic.random as augr
+import augtistic.rand as augr
 
 @tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomSaturation(Layer):
@@ -16,12 +19,15 @@ class RandomSaturation(Layer):
     For each channel, this layer computes the mean of the image pixels in the
     channel and then adjusts each component `x` of each pixel to
     `(x - mean) * saturation_factor + mean`.
+    
     Input shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Output shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Attributes:
         factor: a positive float represented as fraction of value, or a tuple of
             size 2 representing lower and upper bound. When represented as a single
@@ -29,12 +35,13 @@ class RandomSaturation(Layer):
             [1.0 - lower, 1.0 + upper].
         seed: Integer. Used to create a random seed.
         name: A string, the name of the layer.
+    
     Raise:
         ValueError: if lower bound is not between [0, 1], or upper bound is
             negative.
     """
 
-    def __init__(self, factor, seed=None, name=None, **kwargs):
+    def __init__(self, factor, seed=random.randint(0,1000), name=None, **kwargs):
         self.factor = factor
         if isinstance(factor, (tuple, list)):
             self.lower = factor[0]

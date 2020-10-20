@@ -1,24 +1,31 @@
+import random
+
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.backend as K
+import tensorflow_addons as tfa
 
 from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.keras.engine.input_spec import InputSpec
+from tensorflow.python.ops import array_ops
 
-import augtistic.random as augr
+import augtistic.rand as augr
 
 @tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomDenseImageWarp(Layer):
     """This operation is for non-linear warp of any image specified by the flow field of the offset vector (here used random values for example).
     Uses the TensorFlow Addons ref:tfa.image.dense_image_warp function.
     https://www.tensorflow.org/addons/api_docs/python/tfa/image/dense_image_warp
+    
     Input shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Output shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Attributes:
         factor: a positive float represented as fraction of value, or a tuple of
             size 2 representing lower and upper bound. When represented as a single
@@ -26,6 +33,7 @@ class RandomDenseImageWarp(Layer):
             [lower, upper].
         seed: Integer. Used to create a random seed.
         name: A string, the name of the layer.
+    
     Raise:
         ValueError: if lower bound or upper bound is negative, or if upper bound is
                     smaller than lower bound
@@ -62,7 +70,7 @@ class RandomDenseImageWarp(Layer):
         self._rng = augr.get(self.seed)
         super(RandomDenseImageWarp, self).__init__(name=name, **kwargs)
     
-    def build(self, input_shape):
+    def build(self, input_shape):        
         self.height = input_shape[1]
         self.width = input_shape[2]
 
@@ -70,10 +78,13 @@ class RandomDenseImageWarp(Layer):
         if training is None:
             training = K.learning_phase()
 
+        self.batch_size = array_ops.shape(inputs)[0]
+
         def random_warp_inputs():
             return self._random_apply(self._apply_warp, inputs, self.probability)
 
-        output = tf_utils.smart_cond(training, random_warp_inputs, lambda: inputs)
+        output = tf_utils.smart_cond(training, random_warp_inputs, 
+                                     lambda: inputs)
         output.set_shape(inputs.shape)
         return output
     
@@ -86,12 +97,12 @@ class RandomDenseImageWarp(Layer):
         
     def _apply_warp(self, inputs):
         blend = self._rng.uniform(shape=[], 
-                                   minval=self.blend_lower, 
-                                   maxval=self.blend_upper, dtype=tf.float32)        
-        flow_shape = [1, self.height, self.width, 2]
+                                  minval=self.blend_lower, 
+                                  maxval=self.blend_upper, dtype=tf.float32)        
+        flow_shape = [self.batch_size, self.height, self.width, 2]
         init_flows = self._rng.uniform(shape=flow_shape, 
-                                   minval=self.lower, 
-                                   maxval=self.upper, dtype=tf.float32)
+                                       minval=self.lower, 
+                                       maxval=self.upper, dtype=tf.float32)
         init_flows = init_flows * 2.0
         dense_img_warp = tfa.image.dense_image_warp(inputs, init_flows)
         return tfa.image.blend(inputs, dense_img_warp, blend)
@@ -102,7 +113,14 @@ class RandomDenseImageWarp(Layer):
     def get_config(self):
         config = {
             'factor': self.factor,
-            'seed': self.seed
+            'seed': self.seed,
+            'blend_lower': self.blend_lower,
+            'blend_upper': self.blend_upper,
+            'blend_factor': self.blend_factor,
+            'lower': self.lower,
+            'upper': self.upper,
+            'factor': self.factor,
+            'probability': self.probability,
         }
         base_config = super(RandomDenseImageWarp, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))

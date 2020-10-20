@@ -1,24 +1,30 @@
+import random
+
 import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.backend as K
+import tensorflow_addons as tfa
 
 from tensorflow.keras.layers import Layer
 from tensorflow.python.keras.utils import tf_utils
 from tensorflow.python.keras.engine.input_spec import InputSpec
 
-import augtistic.random as augr
+import augtistic.rand as augr
 
 @tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomSharpness(Layer):
     """Adjust the sharpness of an image or images by a random factor.
     Uses the TensorFlow Addons ref:tfa.image.sharpness function.
     https://www.tensorflow.org/addons/api_docs/python/tfa/image/sharpness
+    
     Input shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Output shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Attributes:
         probability: A positive float, chance of applying at all
         factor: A positive float represented as fraction of value, or a tuple of
@@ -31,6 +37,7 @@ class RandomSharpness(Layer):
             The blend factor will be randomly picked between [blend_lower, blend_upper].            
         seed: Integer. Used to create a random seed.
         name: A string, the name of the layer.
+    
     Raise:
         ValueError: if lower bound or upper bound is negative, or if upper bound is
                     smaller than lower bound
