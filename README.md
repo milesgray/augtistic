@@ -22,6 +22,7 @@ Note: *There is now an example notebook that shows all of the currently implemen
   * [Random Mean Filter 2D](augtistic/layers/blur.py)
   * [Random Median Filter 2D](augtistic/layers/blur.py)
 * [Random HSV in YIQ](augtistic/layers/color.py)
+* [Clip Values to Range](augtistic/layers/clip.py)
 
 ## Installation
 
@@ -52,8 +53,9 @@ NUM_CLASSES = 5
 
 model = Sequential([
   tfpp.Rescaling(1./255, input_shape=IMAGE_SHAPE),
-  tfaug.layers.RandomGrayscale(),
+  tfaug.layers.RandomHue(0.5),
   tfaug.layers.RandomCutout(20),
+  tfaug.layers.ClipImageRange((0., 1.)),
   layers.Conv2D(16, 3, padding='same', activation='relu'),
   layers.MaxPooling2D(),
   layers.Conv2D(32, 3, padding='same', activation='relu'),
@@ -88,6 +90,8 @@ aug_output = tfaug.layers.RandomCutout(4)(aug_output)
 aug_output = tfaug.layers.RandomCutout(28, )(aug_output)
 aug_output = tfpp.RandomZoom((-0.25,0.2), width_factor=(-0.25,0.2))(aug_output)
 aug_output = tfpp.RandomTranslation((-0.1, 0.1), (-0.15, 0.15))(aug_output)
+# This range depends on if rescaling was done during the data preprocessing
+aug_output = tfaug.layers.ClipImageRange((0., 1.))(aug_output)
 aug_model = keras.Model(aug_input, aug_output)
 
 base_model = keras.applications.ResNetV2(input_shape=IMAGE_SHAPE,
