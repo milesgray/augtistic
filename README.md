@@ -45,17 +45,19 @@ import tensorflow as tf
 import tensorflow.keras as keras
 import tensorflow.keras.layers as layers
 import tensorflow.keras.layers.experimental.preprocessing as tfpp
-import augtistic as tfaug
-import augtistic.layers
+import augtistic.layers as tfaug
 
 IMAGE_SHAPE = (224,224,3)
 NUM_CLASSES = 5
 
+aug_model = Sequential([  
+  tfaug.RandomHue(0.5, input_shape=IMAGE_SHAPE),
+  tfaug.RandomCutout(20),
+  tfaug.ClipImageRange((0, 255))
+])
+
 model = Sequential([
   tfpp.Rescaling(1./255, input_shape=IMAGE_SHAPE),
-  tfaug.layers.RandomHue(0.5),
-  tfaug.layers.RandomCutout(20),
-  tfaug.layers.ClipImageRange((0., 1.)),
   layers.Conv2D(16, 3, padding='same', activation='relu'),
   layers.MaxPooling2D(),
   layers.Conv2D(32, 3, padding='same', activation='relu'),
@@ -66,6 +68,14 @@ model = Sequential([
   layers.Dense(128, activation='relu'),
   layers.Dense(NUM_CLASSES)
 ])
+
+train_model = Sequential([aug_model, model])
+train_model.compile(optimizer=keras.optimizers.Adam(),
+                    loss=keras.losses.SparseCategoricalCrossentropy(),
+                    metrics=["accuracy"])
+train_model.fit(ds_train,
+                epochs=5,
+                validation_data=ds_test)
 ```
 
 Another pattern that can be used is to make a stand-alone model consisting of only augmentation layers that data is passed through before being sent into the main model in a custom training loop.
@@ -87,7 +97,7 @@ aug_output = tfaug.layers.RandomBrightness(0.2)(aug_output)
 aug_output = tfaug.layers.RandomHue(0.2)(aug_output)
 aug_output = tfaug.layers.RandomCutout(20)(aug_output)
 aug_output = tfaug.layers.RandomCutout(4)(aug_output)
-aug_output = tfaug.layers.RandomCutout(28, )(aug_output)
+aug_output = tfaug.layers.RandomCutout(8, rounds=2)(aug_output)
 aug_output = tfpp.RandomZoom((-0.25,0.2), width_factor=(-0.25,0.2))(aug_output)
 aug_output = tfpp.RandomTranslation((-0.1, 0.1), (-0.15, 0.15))(aug_output)
 # This range depends on if rescaling was done during the data preprocessing
