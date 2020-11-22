@@ -13,40 +13,34 @@ import augtistic.rand as augr
 
 @tf.keras.utils.register_keras_serializable(package="Augtistic")
 class RandomHue(Layer):
-    """Adjust the contrast of an image or images by a random factor.
-    Contrast is adjusted independently for each channel of each image during
-    training.
-    For each channel, this layer computes the mean of the image pixels in the
-    channel and then adjusts each component `x` of each pixel to
-    `(x - mean) * contrast_factor + mean`.
+    """Adjust the hue of an image or images by a random delta.
+    It converts an RGB image to float representation, 
+    converts it to HSV, adds an offset to the hue channel, 
+    converts back to RGB and then back to the original data type.    
+    
     Input shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Output shape:
         4D tensor with shape:
         `(samples, height, width, channels)`, data_format='channels_last'.
+    
     Attributes:
-        factor: a positive float represented as fraction of value, or a tuple of
-            size 2 representing lower and upper bound. When represented as a single
-            float, lower = upper. The contrast factor will be randomly picked between
-            [1.0 - lower, 1.0 + upper].
-        seed: Integer. Used to create a random seed.
+        max_delta: float. The maximum value for the random delta. Must be in the interval [0, 0.5].
+        seed: Integer. Used to create a random seed. Pass None to make determinalistic.
         name: A string, the name of the layer.
+    
     Raise:
-        ValueError: if lower bound is not between [0, 1], or upper bound is
-            negative.
+        ValueError: if max_delta is invalid.
     """
 
-    def __init__(self, factor, seed=random.randint(0,1000), name=None, **kwargs):
-        self.factor = factor
-        if isinstance(factor, (tuple, list)):
-            self.lower = factor[0]
-            self.upper = factor[1]
-        else:
-            self.lower = self.upper = factor
-        if self.lower < 0. or self.upper < 0. or self.lower > 1.:
-            raise ValueError('Factor cannot have negative values or greater than 1.0,'
-                             ' got {}'.format(factor))
+    def __init__(self, max_delta, seed=random.randint(0,1000), name=None, **kwargs):
+        self.max_delta = max_delta
+
+        if self.max_delta < 0. or self.max_delta > 0.5:
+            raise ValueError('max_delta cannot have negative values or greater than 0.5,'
+                             ' got {}'.format(max_delta))
         self.seed = seed
         self.input_spec = InputSpec(ndim=4)
         super(RandomHue, self).__init__(name=name, **kwargs)
@@ -56,7 +50,7 @@ class RandomHue(Layer):
             training = K.learning_phase()
 
         def random_hue_inputs():
-            return tf.image.random_hue(inputs, self.factor, self.seed)
+            return tf.image.random_hue(inputs, self.max_delta, self.seed)
 
         output = tf_utils.smart_cond(training, random_hue_inputs,
                                      lambda: inputs)
@@ -68,7 +62,7 @@ class RandomHue(Layer):
 
     def get_config(self):
         config = {
-            'factor': self.factor,
+            'max_delta': self.max_delta,
             'seed': self.seed,
         }
         base_config = super(RandomHue, self).get_config()
