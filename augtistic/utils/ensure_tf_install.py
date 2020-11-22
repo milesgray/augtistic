@@ -22,47 +22,33 @@ from distutils.version import LooseVersion
 import warnings
 
 import tensorflow as tf
+import tensorflow_addons as tfa
 
 MIN_TF_VERSION = "2.3.0"
-MAX_TF_VERSION = "2.4.0"
-
+MIN_TFA_VERSION = ""
 
 def check_tf_version():
     """Warn the user if the version of TensorFlow used is not supported.
-    This is not a check for custom ops compatibility. This check only ensure that
-    we support this TensorFlow version if the user uses only Addons' Python code.
+    This is a check for the new Preprocessing type of layer introduced in TensorFlow 2.3,
+    though it is not explicitly referenced.
     """
 
-    if "dev" in tf.__version__:
-        warnings.warn(
-            "You are currently using a nightly version of TensorFlow ({}). \n"
-            "TensorFlow Addons offers no support for the nightly versions of "
-            "TensorFlow. Some things might work, some other might not. \n"
-            "If you encounter a bug, do not file an issue on GitHub."
-            "".format(tf.__version__),
-            UserWarning,
-        )
-        return
+    min_tf_version = LooseVersion(MIN_TF_VERSION)
 
-    min_version = LooseVersion(MIN_TF_VERSION)
-    max_version = LooseVersion(MAX_TF_VERSION)
-
-    if min_version <= LooseVersion(tf.__version__) < max_version:
+    if min_tf_version <= LooseVersion(tf.__version__):
         return
 
     warnings.warn(
-        "Tensorflow Addons supports using Python ops for all Tensorflow versions "
-        "above or equal to {} and strictly below {} (nightly versions are not "
-        "supported). \n "
+        "Augtistic supports using Keras Layer base class that is in most Tensorflow versions, "
+        "but the Preprocessing concept is only in versions above or equal to {}.\n "
         "The versions of TensorFlow you are currently using is {} and is not "
         "supported. \n"
         "Some things might work, some things might not.\n"
         "If you were to encounter a bug, do not file an issue.\n"
         "If you want to make sure you're using a tested and supported configuration, "
-        "either change the TensorFlow version or the TensorFlow Addons's version. \n"
-        "You can find the compatibility matrix in TensorFlow Addon's readme:\n"
-        "https://github.com/tensorflow/addons".format(
-            MIN_TF_VERSION, MAX_TF_VERSION, tf.__version__
+        "change the TensorFlow version. See more details at: \n"
+        "https://github.com/milesgray/augtistic".format(
+            MIN_TF_VERSION, tf.__version__
         ),
         UserWarning,
     )
